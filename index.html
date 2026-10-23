@@ -1,0 +1,1375 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pal's RNG</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #0f172a;
+            color: white;
+            overflow-x: hidden;
+        }
+
+        /* 멋진 글씨체 (over clock 전용) */
+        .font-overclock {
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* 네온 글로우 효과 */
+        .text-shadow-glow-blue { text-shadow: 0 0 10px #3b82f6, 0 0 20px #3b82f6, 0 0 40px #3b82f6; }
+        .text-shadow-glow-red { text-shadow: 0 0 10px #ef4444, 0 0 20px #ef4444, 0 0 40px #ef4444; }
+        .text-shadow-glow-yellow { text-shadow: 0 0 10px #eab308, 0 0 20px #eab308, 0 0 40px #eab308; }
+
+        /* 애니메이션 */
+        @keyframes pop {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop {
+            animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* 버튼 호버 효과 */
+        .btn-roll {
+            transition: all 0.2s ease-in-out;
+        }
+        .btn-roll:active {
+            transform: scale(0.95);
+        }
+
+        /* Impeached 전용 스타일 */
+        .text-impeached {
+            background: linear-gradient(to bottom, #ffffff 20%, #9ca3af 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            -webkit-text-stroke: 1.5px #000000;
+            filter: drop-shadow(0 0 10px #a855f7) drop-shadow(0 0 25px #9333ea);
+        }
+
+        /* Lily (청록색 유리 폰트) */
+        .text-lily {
+            color: rgba(103, 232, 249, 0.4);
+            -webkit-text-stroke: 1px rgba(255, 255, 255, 0.9);
+            text-shadow: 0 4px 15px rgba(34, 211, 238, 0.8), 0 0 5px rgba(255, 255, 255, 0.5);
+        }
+
+        /* Prophecy (주황~노랑 그라데이션) */
+        .text-prophecy {
+            background: linear-gradient(to right, #f97316, #eab308);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 15px rgba(249, 115, 22, 0.6));
+        }
+
+        /* Abyssal Hunter (검은색 + 파란색 테두리) */
+        .text-abyssal {
+            color: #000000;
+            -webkit-text-stroke: 2px #3b82f6;
+            text-shadow: 0 0 15px rgba(59, 130, 246, 0.8);
+        }
+
+        /* Aegis (파란색~하얀색 그라데이션) */
+        .text-aegis {
+            background: linear-gradient(to bottom, #ffffff, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.5));
+        }
+
+        /* Aegis 톱니바퀴 애니메이션 */
+        .gear-icon {
+            display: inline-block;
+            color: #3b82f6;
+            font-size: 0.7em;
+            text-shadow: 0 0 10px rgba(59, 130, 246, 0.8);
+            animation: spin 4s linear infinite;
+            -webkit-text-fill-color: #3b82f6; /* 그라데이션 해제 */
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* PIXELATION (무지개 폰트) */
+        @keyframes rainbow {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
+        }
+        .text-pixelation {
+            background: linear-gradient(to right, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: rainbow 3s linear infinite;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: 900;
+            letter-spacing: -2px;
+        }
+
+        /* 픽셀화 팝업 토스트 */
+        .pixel-toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 30px 50px;
+            border: 3px solid #fff;
+            border-radius: 16px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.5rem;
+            font-weight: bold;
+            z-index: 1000;
+            text-align: center;
+            box-shadow: 0 0 40px rgba(255, 255, 255, 0.4);
+            animation: rainbow 2s linear infinite, pop 0.3s ease-out;
+            white-space: nowrap;
+        }
+
+        /* LUMINOSITY 폰트 및 장식 */
+        .text-luminosity {
+            color: #6ee7b7; /* 민트색 */
+            -webkit-text-stroke: 1.5px #ffffff;
+            text-shadow: 0 0 20px #34d399, 0 0 40px #ffffff, 0 0 60px #a7f3d0;
+        }
+        .sparkle-icon {
+            display: inline-block;
+            animation: twinkle 1.5s infinite alternate;
+        }
+        @keyframes twinkle {
+            0% { opacity: 0.3; transform: scale(0.8); text-shadow: 0 0 5px #fff; }
+            100% { opacity: 1; transform: scale(1.2) rotate(15deg); text-shadow: 0 0 20px #fff; }
+        }
+
+        /* LEVIATHAN 폰트 및 효과 */
+        .text-leviathan {
+            background: linear-gradient(to bottom, #22c55e, #000000);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            -webkit-text-stroke: 1px #064e3b;
+            filter: drop-shadow(0 0 10px cyan) drop-shadow(0 0 20px cyan);
+            animation: wave-pulse 2s ease-in-out infinite alternate;
+        }
+        @keyframes wave-pulse {
+            0% { filter: drop-shadow(0 0 5px cyan) drop-shadow(0 0 15px cyan); }
+            100% { filter: drop-shadow(0 0 15px cyan) drop-shadow(0 0 30px cyan) drop-shadow(0 0 45px #0891b2); }
+        }
+
+        /* 연출 애니메이션 */
+        @keyframes fadeInOutText {
+            0% { opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; mask-image: none; }
+            100% { opacity: 0; mask-image: linear-gradient(to right, transparent, black); }
+        }
+        .fade-seq { animation: fadeInOutText 1s forwards; } /* JS에서 지속시간 제어 */
+        
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-10px, 10px, 0); }
+            20%, 80% { transform: translate3d(15px, -15px, 0); }
+            30%, 50%, 70% { transform: translate3d(-20px, 20px, 0); }
+            40%, 60% { transform: translate3d(20px, -20px, 0); }
+        }
+        .screen-shake-anim { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        
+        @keyframes flashAnim {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        .flash-effect { animation: flashAnim 1.5s forwards; }
+        
+        /* EQUINOX 전용 스타일 */
+        .text-equinox {
+            background: linear-gradient(to bottom, #000000 0%, #000000 50%, #ffffff 50%, #ffffff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            -webkit-text-stroke: 1.5px #94a3b8; /* 배경에 묻히지 않게 테두리 추가 */
+            filter: drop-shadow(0 0 10px rgba(255,255,255,0.4)) drop-shadow(0 0 10px rgba(0,0,0,0.6));
+        }
+
+        /* EQUINOX 비주얼라이저 */
+        @keyframes eq-bar-top { 0%, 100% { height: 5%; } 50% { height: 100%; } }
+        @keyframes eq-bar-bottom { 0%, 100% { height: 5%; } 50% { height: 100%; } }
+        .eq-top-bar { width: 4%; background: #ffffff; animation: eq-bar-top 0.24s infinite ease-in-out; box-shadow: 0 5px 15px rgba(255,255,255,0.3); }
+        .eq-bottom-bar { width: 4%; background: #000000; animation: eq-bar-bottom 0.24s infinite ease-in-out; box-shadow: 0 -5px 15px rgba(0,0,0,0.8); border-top: 1px solid #333; }
+        
+        /* EQUINOX 화면 흔들림 */
+        @keyframes shake-mod {
+            0%, 100% { transform: translate3d(0, 0, 0); }
+            25% { transform: translate3d(-8px, 8px, 0); }
+            50% { transform: translate3d(8px, -8px, 0); }
+            75% { transform: translate3d(-8px, -8px, 0); }
+        }
+        .screen-shake-mod { animation: shake-mod 0.24s infinite; }
+
+        @keyframes shake-heavy {
+            0%, 100% { transform: translate3d(0, 0, 0); }
+            25% { transform: translate3d(-30px, 30px, 0) rotate(-3deg); }
+            50% { transform: translate3d(30px, -30px, 0) rotate(3deg); }
+            75% { transform: translate3d(-30px, -30px, 0) rotate(-3deg); }
+        }
+        .screen-shake-heavy { animation: shake-heavy 0.1s infinite; }
+
+        /* EQUINOX 흑백 섬광 */
+        @keyframes bwFlashAnim {
+            0% { background-color: white; opacity: 1; }
+            15% { background-color: black; opacity: 1; }
+            30% { background-color: white; opacity: 1; }
+            45% { background-color: black; opacity: 1; }
+            60% { background-color: white; opacity: 1; }
+            100% { opacity: 0; }
+        }
+        .bw-flash-effect { animation: bwFlashAnim 1s forwards; }
+
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        /* HELLBORN 전용 스타일 */
+        .text-hellborn {
+            background: linear-gradient(to bottom, #78350f, #ea580c, #fef08a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            -webkit-text-stroke: 1.5px #451a03;
+            filter: drop-shadow(0 0 15px rgba(234, 88, 12, 0.8));
+        }
+
+        @keyframes flicker {
+            0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% { opacity: 1; text-shadow: 0 0 20px #ea580c, 0 0 40px #c2410c, 0 0 60px #9a3412; }
+            20%, 24%, 55% { opacity: 0.5; text-shadow: none; }
+        }
+        .death-mark-text {
+            font-family: 'Noto Sans KR', serif;
+            color: #ffedd5;
+            animation: flicker 3s infinite alternate;
+        }
+
+        @keyframes stabFall {
+            0% { transform: translateY(-200px) scaleY(2); opacity: 0; }
+            70% { opacity: 1; }
+            100% { transform: translateY(0) scaleY(1); opacity: 1; }
+        }
+        .sword-prop {
+            position: absolute;
+            width: 6px;
+            height: 120px;
+            background: linear-gradient(to bottom, #333, #000);
+            clip-path: polygon(50% 100%, 100% 0, 0 0); /* 뾰족한 검 모양 */
+            box-shadow: 0 0 10px rgba(0,0,0,0.8);
+            animation: stabFall 0.3s cubic-bezier(.11,.79,.02,.99) forwards;
+        }
+
+        /* 작은 불꽃 입자 효과 */
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(1); opacity: 0; }
+            20% { opacity: 0.8; }
+            100% { transform: translateY(-200px) scale(0.5); opacity: 0; }
+        }
+        .flame-particle {
+            position: absolute;
+            bottom: -30px;
+            width: 12px;
+            height: 12px;
+            background: #ea580c;
+            border-radius: 50%;
+            filter: blur(2px);
+            animation: floatUp 2s ease-in infinite;
+        }
+
+        /* MASTERHAND 전용 스타일 */
+        .text-masterhand {
+            background: linear-gradient(to bottom, #f97316, #dc2626); /* 주황 ~ 빨강 */
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            -webkit-text-stroke: 1.5px #fef08a; /* 빛나는 노란색 테두리 */
+            filter: drop-shadow(0 0 15px rgba(253, 224, 71, 0.8));
+        }
+
+        /* MasterHand 컷신 애니메이션 요소 */
+        .mh-radar {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: 2px solid #f97316;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(249, 115, 22, 0.5);
+        }
+        .mh-radar::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 50%; height: 50%;
+            background: linear-gradient(45deg, rgba(249,115,22,0) 0%, rgba(249,115,22,0.8) 100%);
+            transform-origin: 0% 0%;
+            animation: radar-spin 2s linear infinite;
+        }
+        @keyframes radar-spin { 100% { transform: rotate(360deg); } }
+
+        .mh-wire {
+            position: absolute;
+            top: 50%;
+            width: 50vw;
+            height: 12px;
+            background: linear-gradient(to right, #451a03, #f97316);
+            box-shadow: 0 0 15px #f97316;
+            transform: translateY(-50%);
+            z-index: 10;
+        }
+        .mh-wire-left { left: -50vw; transition: left 0.5s ease-out; }
+        .mh-wire-right { 
+            right: -50vw; 
+            background: linear-gradient(to left, #451a03, #f97316); 
+            transition: right 0.5s ease-out; 
+        }
+
+        .mh-gear {
+            width: 160px;
+            height: 160px;
+            animation: spin 4s linear infinite;
+            filter: drop-shadow(0 0 20px #f97316);
+            z-index: 20;
+        }
+
+        .mh-screen-glow {
+            position: absolute;
+            inset: 0;
+            border: 4px solid #f97316;
+            box-shadow: inset 0 0 40px #f97316;
+            pointer-events: none;
+            z-index: 5;
+            animation: pulse-glow 2s infinite alternate;
+        }
+        @keyframes pulse-glow {
+            0% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+
+        /* JESUS 전용 스타일 */
+        .text-jesus {
+            color: #fef08a; /* 아주 밝은 노란색 */
+            -webkit-text-stroke: 1.5px #ffffff;
+            text-shadow: 0 0 20px #eab308, 0 0 40px #fde047, 0 0 80px #fef08a, 0 0 120px #ffffff;
+        }
+        .jesus-image-fade {
+            transition: opacity 3s ease-in-out;
+        }
+
+        /* MONARCH 컷신 전용 스타일 */
+        .text-shadow-glow-purple { text-shadow: 0 0 10px #a855f7, 0 0 20px #a855f7, 0 0 40px #a855f7; }
+        .monarch-whisper {
+            position: absolute;
+            color: #d8b4fe;
+            font-size: 1.2rem;
+            text-shadow: 0 0 10px #9333ea;
+            opacity: 0;
+            transition: opacity 1s;
+            pointer-events: none;
+            white-space: nowrap;
+        }
+        .monarch-command {
+            color: #f3f4f6;
+            font-weight: bold;
+            font-size: 1.5rem;
+            text-shadow: 0 0 20px #dc2626;
+        }
+        .monarch-bg-eye {
+            animation: pulse-glow 2s infinite alternate;
+        }
+
+        /* ILLUSIONARY 컷신 전용 스타일 */
+        .text-illusionary {
+            color: #ffffff;
+            text-shadow: 3px 0 #ff00ff, -3px 0 #00ffff;
+            animation: glitch-anim 0.1s infinite linear;
+        }
+        @keyframes glitch-anim {
+            0% { transform: translate(0) }
+            20% { transform: translate(-3px, 3px) }
+            40% { transform: translate(-3px, -3px) }
+            60% { transform: translate(3px, 3px) }
+            80% { transform: translate(3px, -3px) }
+            100% { transform: translate(0) }
+        }
+        .glitch-bg {
+            background-image: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(0, 0, 0, 0.9) 2px,
+                rgba(0, 0, 0, 0.9) 4px
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+
+        /* 스크롤바 커스텀 */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <!-- 1. 시작 화면 (이름 및 학번 입력) -->
+    <div id="start-screen" class="bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-md border border-slate-700">
+        <h1 class="font-overclock text-4xl text-center text-blue-400 mb-2">pal's RNG</h1>
+        <p class="text-center text-slate-400 mb-6">당신의 운을 시험해보세요!</p>
+        
+        <!-- 필독 박스 추가 -->
+        <div class="bg-slate-900 border border-yellow-500/50 p-4 rounded-lg mb-6 shadow-[0_0_15px_rgba(234,179,8,0.1)]">
+            <h3 class="text-yellow-400 font-bold mb-2 flex items-center gap-2">
+                📢 필!독
+            </h3>
+            <p class="text-slate-300 text-sm leading-relaxed mb-3">
+                이 게임은 Sol's RNG 라는 게임에서 영감을 받았으며 모든 칭호와 대사는 그 게임에서 가져온 것입니다. 재밌게 플레이 해주세요! <br>
+                <strong class="text-white">(목표! : 지져스를 찾아라)</strong>
+            </p>
+            <p class="text-slate-500 text-xs text-right">
+                공동제작 : 의정부 솔, 수현
+            </p>
+        </div>
+        
+        <div class="space-y-4">
+            <div>
+                <label for="student-id" class="block text-sm font-medium text-slate-300 mb-1">학번</label>
+                <input type="text" id="student-id" placeholder="예: 20240101" class="w-full px-4 py-3 rounded-lg bg-slate-900 border border-slate-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none text-white transition">
+            </div>
+            <div>
+                <label for="student-name" class="block text-sm font-medium text-slate-300 mb-1">이름</label>
+                <input type="text" id="student-name" placeholder="이름을 입력하세요" class="w-full px-4 py-3 rounded-lg bg-slate-900 border border-slate-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 outline-none text-white transition">
+            </div>
+            <button onclick="startGame()" class="w-full mt-6 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-lg shadow-[0_0_15px_rgba(37,99,235,0.5)] transition-all">
+                게임 시작하기
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. 메인 게임 화면 -->
+    <div id="game-screen" class="hidden w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
+        
+        <!-- 왼쪽: 뽑기 영역 -->
+        <div class="md:col-span-2 flex flex-col items-center justify-center bg-slate-800 p-8 rounded-2xl border border-slate-700 shadow-2xl min-h-[500px] relative">
+            
+            <div class="absolute top-4 left-6">
+                <h2 class="font-overclock text-2xl text-blue-400">pal's RNG</h2>
+                <p id="player-info" class="text-sm text-slate-400 mt-1"></p>
+            </div>
+
+            <!-- 뽑기 결과 표시 영역 -->
+            <div id="result-display" class="flex-1 flex flex-col items-center justify-center w-full my-8">
+                <p class="text-slate-500 text-lg mb-4">버튼을 눌러 뽑기를 시작하세요!</p>
+            </div>
+
+            <!-- 뽑기 버튼 -->
+            <button onclick="roll()" class="btn-roll bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-2xl font-bold py-4 px-12 rounded-full shadow-[0_0_30px_rgba(79,70,229,0.5)] border-2 border-indigo-400/50">
+                뽑기 (ROLL)
+            </button>
+
+            <!-- 컷신 다시보기 버튼 -->
+            <button onclick="openCutsceneGallery()" class="mt-6 bg-slate-700 hover:bg-slate-600 text-slate-300 font-bold py-2 px-6 rounded-full border border-slate-600 transition-colors shadow-lg">
+                🎬 컷신 갤러리
+            </button>
+        </div>
+
+        <!-- 오른쪽: 리더보드 영역 -->
+        <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-2xl flex flex-col h-[500px]">
+            <h3 class="text-xl font-bold mb-4 flex items-center gap-2 border-b border-slate-700 pb-3">
+                🏆 리더보드 
+                <span class="text-xs font-normal text-slate-400 bg-slate-700 px-2 py-1 rounded">확률 낮은 순</span>
+            </h3>
+            
+            <div id="leaderboard-list" class="flex-1 overflow-y-auto space-y-3 pr-2">
+                <p class="text-center text-slate-500 mt-10">아직 뽑은 기록이 없습니다.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 픽셀레이션 당첨 팝업 -->
+    <div id="pixel-toast" class="hidden pixel-toast">
+        <span id="pixel-toast-text"></span>
+    </div>
+
+    <!-- LUMINOSITY 당첨 팝업 -->
+    <div id="luminosity-toast" class="hidden pixel-toast" style="background: rgba(255,255,255,0.9); color: #34d399; border-color: #6ee7b7; box-shadow: 0 0 50px #34d399;">
+        <span id="luminosity-toast-text" class="text-luminosity" style="-webkit-text-stroke: 1px #fff; filter: none;"></span>
+    </div>
+
+    <!-- LEVIATHAN 시퀀스 오버레이 -->
+    <div id="leviathan-overlay" class="hidden fixed inset-0 bg-black z-50 flex items-center justify-center pointer-events-none">
+        <div id="leviathan-text" class="text-white text-3xl md:text-5xl font-serif text-center px-6 opacity-0 tracking-widest leading-relaxed"></div>
+        <div id="leviathan-flash" class="hidden absolute inset-0 bg-white z-[60]"></div>
+    </div>
+
+    <!-- EQUINOX 비주얼라이저 (상시 잔존 가능) -->
+    <div id="equinox-visualizer" class="hidden fixed inset-0 z-0 flex flex-col justify-between pointer-events-none opacity-40">
+        <div id="eq-top" class="flex w-full h-[40%] items-start justify-around gap-1"></div>
+        <div id="eq-bottom" class="flex w-full h-[40%] items-end justify-around gap-1"></div>
+    </div>
+
+    <!-- EQUINOX 시퀀스 오버레이 -->
+    <div id="equinox-overlay" class="hidden fixed inset-0 z-50 flex items-center justify-center pointer-events-none backdrop-blur-sm">
+        <div id="equinox-text" class="text-white text-3xl md:text-5xl font-bold text-center px-6 opacity-0 tracking-widest leading-relaxed drop-shadow-lg"></div>
+        <div id="equinox-flash" class="hidden absolute inset-0 z-[60]"></div>
+    </div>
+
+    <!-- HELLBORN 시퀀스 오버레이 -->
+    <div id="hellborn-overlay" class="hidden fixed inset-0 bg-black z-50 flex flex-col items-center justify-center pointer-events-none">
+        <div id="hellborn-death-mark" class="hidden absolute top-10 text-6xl md:text-8xl font-black death-mark-text">死</div>
+        <div id="hellborn-swords-container" class="absolute inset-0 z-10"></div>
+        <div id="hellborn-text" class="text-white text-2xl md:text-4xl font-serif text-center px-6 opacity-0 tracking-widest leading-relaxed z-20"></div>
+        
+        <div id="hellborn-crown" class="hidden absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-30 flex text-6xl md:text-8xl drop-shadow-[0_0_20px_#ea580c]">
+            <!-- 잘라진 왕관 2개 부분 -->
+            <div id="hb-crown-left" class="relative" style="clip-path: polygon(0 0, 50% 0, 45% 100%, 0 100%);">👑</div>
+            <div id="hb-crown-right" class="absolute left-0" style="clip-path: polygon(50% 0, 100% 0, 100% 100%, 45% 100%);">👑</div>
+            <!-- 절단 궤적 선 -->
+            <div id="hb-slice-line" class="hidden absolute top-1/2 left-[-20%] w-[140%] h-1 bg-white shadow-[0_0_10px_#fff] transform -rotate-12 z-40"></div>
+        </div>
+
+        <div id="hellborn-flash" class="hidden absolute inset-0 bg-orange-600 z-[60]"></div>
+    </div>
+
+    <!-- MASTERHAND 시퀀스 오버레이 -->
+    <div id="masterhand-overlay" class="hidden fixed inset-0 bg-black z-50 flex flex-col items-center justify-center pointer-events-none">
+        <div id="mh-radar-container" class="hidden"><div class="mh-radar"></div></div>
+        
+        <div id="mh-wire-left" class="mh-wire mh-wire-left"></div>
+        <div id="mh-wire-right" class="mh-wire mh-wire-right"></div>
+        
+        <div id="mh-gear-container" class="hidden relative flex items-center justify-center">
+            <!-- 이모티콘 대신 SVG로 톱니바퀴 직접 구현 -->
+            <svg class="mh-gear" viewBox="0 0 100 100" fill="none" stroke="#f97316" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="50" cy="50" r="35" fill="#1a0a00" stroke="#f97316"/>
+                <circle cx="50" cy="50" r="15" fill="none"/>
+                <path d="M50 5 v10 M50 85 v10 M5 50 h10 M85 50 h10 M18 18 l8 8 M74 74 l8 8 M18 82 l8 -8 M74 26 l8 -8"/>
+            </svg>
+            <div id="mh-gear-text" class="absolute text-white font-overclock text-xl opacity-0 transition-opacity duration-1000 z-30" style="text-shadow: 0 0 10px #f97316, 0 0 20px #dc2626;">MasterHand</div>
+        </div>
+        
+        <div id="masterhand-flash" class="hidden absolute inset-0 bg-orange-500 z-[60]"></div>
+    </div>
+
+    <!-- JESUS 시퀀스 오버레이 -->
+    <div id="jesus-overlay" class="hidden fixed inset-0 bg-black z-50 flex flex-col items-center justify-center pointer-events-none">
+        <img id="jesus-bg-image" src="1000009291_8122dc.jpg" class="absolute inset-0 w-full h-full object-cover opacity-0 jesus-image-fade z-10" alt="Jesus">
+        <div id="jesus-text" class="text-white text-3xl md:text-5xl font-serif text-center px-6 opacity-0 tracking-widest leading-relaxed z-20 drop-shadow-[0_0_10px_rgba(0,0,0,0.8)]"></div>
+        <div id="jesus-flash" class="hidden absolute inset-0 bg-white z-[60]"></div>
+    </div>
+
+    <!-- MONARCH 시퀀스 오버레이 (코드에만 있던 컷신을 위해 추가) -->
+    <div id="monarch-overlay" class="hidden fixed inset-0 bg-black z-50 flex flex-col items-center justify-center pointer-events-none border-[10px] border-purple-900 transition-all duration-[3000ms]">
+        <div id="monarch-whispers-container" class="absolute inset-0 z-10 overflow-hidden"></div>
+        <div id="monarch-counter" class="text-purple-500 text-6xl md:text-9xl font-black z-20 text-shadow-glow-purple transition-opacity duration-1000">0</div>
+        
+        <div id="monarch-eye-container" class="hidden absolute inset-0 z-30 flex items-center justify-center bg-black">
+            <svg width="300" height="150" viewBox="0 0 100 60" fill="none" stroke="#a855f7" stroke-width="2" class="drop-shadow-[0_0_50px_#9333ea]">
+                <path d="M5 30 C30 5, 70 5, 95 30 C70 55, 30 55, 5 30 Z" fill="#000"/>
+                <circle cx="50" cy="30" r="15" fill="#9333ea" class="animate-pulse"/>
+                <circle cx="50" cy="30" r="5" fill="#000"/>
+            </svg>
+        </div>
+        <div id="monarch-flash" class="hidden absolute inset-0 bg-purple-600 z-[60]"></div>
+    </div>
+
+    <!-- ILLUSIONARY 시퀀스 오버레이 -->
+    <div id="illusionary-overlay" class="hidden fixed inset-0 bg-black z-50 flex flex-col items-center justify-center pointer-events-none overflow-hidden">
+        <div class="glitch-bg absolute inset-0 z-0 opacity-60"></div>
+        <div id="illusionary-bg-flash" class="absolute inset-0 z-10 hidden"></div>
+        <div id="illusionary-text" class="text-white text-4xl md:text-7xl font-black text-center px-6 opacity-0 z-20 mix-blend-difference font-overclock tracking-[0.2em]"></div>
+    </div>
+
+    <!-- 컷신 갤러리 모달 -->
+    <div id="cutscene-modal" class="hidden fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 w-full max-w-lg shadow-2xl">
+            <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-3">
+                <h2 class="text-2xl font-bold text-white">🎬 컷신 갤러리</h2>
+                <button onclick="closeCutsceneGallery()" class="text-slate-400 hover:text-white text-3xl transition-colors">&times;</button>
+            </div>
+            <p class="text-slate-400 mb-4 text-sm">보고 싶은 칭호의 컷신을 클릭하세요.</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto pr-2">
+                <button onclick="playCutscene('jesus')" class="bg-slate-900 hover:bg-slate-700 border border-yellow-500/30 text-white font-bold py-4 px-4 rounded-xl text-center transition-colors text-jesus" style="background-image: none; -webkit-text-fill-color: initial;">Jesus</button>
+                <button onclick="playCutscene('hellborn')" class="bg-slate-900 hover:bg-slate-700 border border-orange-500/30 text-white font-bold py-4 px-4 rounded-xl text-center transition-colors text-hellborn" style="background-image: none; -webkit-text-fill-color: initial;">HELLBORN</button>
+                <button onclick="playCutscene('equinox')" class="bg-slate-900 hover:bg-slate-700 border border-slate-500/30 text-white font-bold py-4 px-4 rounded-xl text-center transition-colors text-equinox" style="background-image: none; -webkit-text-fill-color: initial;">『EQUINOX』</button>
+                <button onclick="playCutscene('leviathan')" class="bg-slate-900 hover:bg-slate-700 border border-cyan-500/30 text-white font-bold py-4 px-4 rounded-xl text-center transition-colors text-leviathan" style="background-image: none; -webkit-text-fill-color: initial;">L E V I A T H A N</button>
+                <button onclick="playCutscene('masterhand')" class="bg-slate-900 hover:bg-slate-700 border border-red-500/30 text-white font-bold py-4 px-4 rounded-xl text-center transition-colors text-masterhand" style="background-image: none; -webkit-text-fill-color: initial;">MasterHand</button>
+                <button onclick="playCutscene('monarch')" class="bg-slate-900 hover:bg-slate-700 border border-purple-500/30 font-bold py-4 px-4 rounded-xl text-center transition-colors text-purple-400 drop-shadow-[0_0_10px_purple]">MONARCH</button>
+                <button onclick="playCutscene('illusionary')" class="bg-slate-900 hover:bg-slate-700 border border-pink-500/30 text-white font-bold py-4 px-4 rounded-xl text-center transition-colors text-illusionary" style="background-image: none; -webkit-text-fill-color: initial;">iLlUsi0nAry</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 새로운 확률 설정 (누적 확률 방식 적용)
+        const rarities = [
+            { id: "jesus", name: "Jesus", prob: 1/1004, fraction: "1004분의 1 (0.09%)", color: "text-jesus", isCoolFont: true },
+            { id: "hellborn", name: "HELLBORN", prob: 1/250, fraction: "250분의 1 (0.4%)", color: "text-hellborn", isCoolFont: true },
+            { id: "equinox", name: "『EQUINOX』", prob: 1/250, fraction: "250분의 1 (0.4%)", color: "text-equinox", isCoolFont: true },
+            { id: "leviathan", name: "L E V I A T H A N", prob: 1/250, fraction: "250분의 1 (0.4%)", color: "text-leviathan", isCoolFont: true },
+            { id: "masterhand", name: "MasterHand", prob: 1/225, fraction: "225분의 1 (0.44%)", color: "text-masterhand", isCoolFont: true },
+            { id: "breakthrough", name: "BREAKTHROUGH", prob: 1/125, fraction: "125분의 1 (0.8%)", color: "text-breakthrough", isCoolFont: true },
+            { id: "luminosity", name: "[ LUMINOSITY ]", prob: 1/120, fraction: "120분의 1 (0.83%)", color: "text-luminosity", isCoolFont: true },
+            { id: "pixel", name: "▣ PIXELATION ▣", prob: 1/100, fraction: "100분의 1 (1%)", color: "text-pixelation", isCoolFont: true },
+            { id: "aegis", name: "Aegis", prob: 1/64, fraction: "64분의 1 (1.56%)", color: "text-aegis", isCoolFont: true },
+            { id: "abyssal", name: "Abyssal Hunter", prob: 1/32, fraction: "32분의 1 (3.12%)", color: "text-abyssal", isCoolFont: true },
+            { id: "prophecy", name: "Prophecy", prob: 1/16, fraction: "16분의 1 (6.25%)", color: "text-prophecy", isCoolFont: true },
+            { id: "lily", name: "Lily", prob: 1/8, fraction: "8분의 1 (12.5%)", color: "text-lily", isCoolFont: true },
+            { id: "impeached", name: "Impeached", prob: 1/4, fraction: "4분의 1 (25%)", color: "text-impeached", isCoolFont: true },
+            { id: "overclock", name: "over clock", prob: 1.0, fraction: "약 2분의 1 (50%)", color: "text-blue-400 text-shadow-glow-blue", isCoolFont: true }
+        ];
+
+        // 각 등급의 누적 확률을 미리 계산
+        let currentProb = 0;
+        rarities.forEach(r => {
+            if (r.id !== 'overclock') {
+                currentProb += r.prob;
+                r.cumulative = currentProb;
+            } else {
+                r.cumulative = 1.0;
+            }
+        });
+
+        let userInfo = { name: "", id: "" };
+        let rollHistory = []; // { id, name, item, fraction, rawProb, timestamp }
+        let rollCount = 0;
+        let isRolling = false; // 컷신 중 버튼 방지용 플래그
+        
+        // EQUINOX 비주얼라이저 초기화
+        function initEquinoxVisualizer() {
+            const top = document.getElementById('eq-top');
+            const bottom = document.getElementById('eq-bottom');
+            top.innerHTML = '';
+            bottom.innerHTML = '';
+            for(let i = 0; i < 20; i++) {
+                const delay = Math.random() * 0.24; // 250bpm 주기에 맞춘 랜덤 딜레이
+                const topBar = document.createElement('div');
+                topBar.className = 'eq-top-bar';
+                topBar.style.animationDelay = `${delay}s`;
+                top.appendChild(topBar);
+
+                const bottomBar = document.createElement('div');
+                bottomBar.className = 'eq-bottom-bar';
+                bottomBar.style.animationDelay = `${delay}s`;
+                bottom.appendChild(bottomBar);
+            }
+        }
+        initEquinoxVisualizer();
+
+        function startGame() {
+            const idInput = document.getElementById('student-id').value;
+            const nameInput = document.getElementById('student-name').value;
+            
+            if (!idInput || !nameInput) {
+                return; // 경고창 없이 무시하여 입력을 유도
+            }
+            
+            userInfo = { id: idInput, name: nameInput };
+            document.getElementById('player-info').innerText = `${userInfo.id} ${userInfo.name}`;
+            
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+        }
+
+        async function roll() {
+            if (isRolling) return; // 컷신 재생 중 중복 클릭 방지
+            isRolling = true;
+            
+            // 새 뽑기 시작 시 이전 비주얼라이저 숨김
+            document.getElementById('equinox-visualizer').classList.add('hidden');
+            
+            const btn = document.querySelector('.btn-roll');
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            // 0.0부터 1.0 사이의 랜덤 값 생성
+            const rand = Math.random();
+            let selectedItem = null;
+            let rawProb = 0;
+
+            // 누적 확률에 따라 결과 결정
+            for (let i = 0; i < rarities.length; i++) {
+                if (rand < rarities[i].cumulative) {
+                    selectedItem = rarities[i];
+                    rawProb = rarities[i].prob; 
+                    break;
+                }
+            }
+
+            rollCount++;
+
+            // 컷신 대기 로직
+            if (selectedItem.id === 'leviathan') {
+                await runLeviathanSequence();
+            } else if (selectedItem.id === 'equinox') {
+                await runEquinoxSequence();
+            } else if (selectedItem.id === 'hellborn') {
+                await runHellbornSequence();
+            } else if (selectedItem.id === 'masterhand') {
+                await runMasterHandSequence();
+            } else if (selectedItem.id === 'jesus') {
+                await runJesusSequence();
+            }
+
+            showResult(selectedItem);
+            addToLeaderboard(selectedItem, rawProb);
+            
+            isRolling = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+
+        // LEVIATHAN 컷신 연출
+        async function runLeviathanSequence() {
+            const overlay = document.getElementById('leviathan-overlay');
+            const textEl = document.getElementById('leviathan-text');
+            const flash = document.getElementById('leviathan-flash');
+            
+            overlay.classList.remove('hidden');
+
+            const sleep = ms => new Promise(r => setTimeout(r, ms));
+            const showText = async (text, holdSec) => {
+                textEl.innerText = text;
+                textEl.style.animation = 'none';
+                void textEl.offsetWidth; // 리플로우 강제 트리거
+                // 텍스트 등장 + 홀드 + 그라데이션 사라짐 (애니메이션 시간 = holdSec)
+                textEl.style.animation = `fadeInOutText ${holdSec}s forwards`;
+                await sleep(holdSec * 1000);
+            };
+
+            // 시퀀스 진행
+            await showText("침묵만이 내 영역에서 통용되는 유일한 언어다...", 3);
+            await sleep(500); // 텀 약간 추가
+            
+            await showText("떨어져라, 마침내 심해가 눈을 떴다.", 5);
+            await sleep(500);
+
+            await showText("나는 심해의 지배자다.", 3);
+            await sleep(500);
+
+            // "내가 바로..." -> 2초 뒤 "왕이다" + 폭발
+            textEl.innerText = "내가 바로...";
+            textEl.style.animation = `fadeIn 0.5s forwards`; // 단순 등장
+            await sleep(2000);
+            
+            textEl.innerText = "왕이다";
+            textEl.className = "text-red-500 text-6xl md:text-8xl font-black text-center px-4 tracking-widest font-overclock";
+            document.body.classList.add('screen-shake-anim');
+            
+            // 하얀색 폭발 이펙트
+            flash.classList.remove('hidden');
+            flash.classList.add('flash-effect');
+            
+            await sleep(500); // 화면 흔들림 유지
+            document.body.classList.remove('screen-shake-anim');
+            await sleep(1000); // 화이트아웃 사라질때까지 대기
+            
+            // 오버레이 및 텍스트 리셋
+            overlay.classList.add('hidden');
+            flash.classList.add('hidden');
+            flash.classList.remove('flash-effect');
+            textEl.className = "text-white text-3xl md:text-5xl font-serif text-center px-6 opacity-0 tracking-widest leading-relaxed";
+            textEl.innerText = "";
+        }
+
+        // EQUINOX 컷신 연출
+        async function runEquinoxSequence() {
+            const overlay = document.getElementById('equinox-overlay');
+            const textEl = document.getElementById('equinox-text');
+            const flash = document.getElementById('equinox-flash');
+            const visualizer = document.getElementById('equinox-visualizer');
+            
+            overlay.classList.remove('hidden');
+            visualizer.classList.remove('hidden'); // 비주얼라이저 등장 (상하 반전)
+            document.body.classList.add('screen-shake-mod'); // 적당한 흔들림
+
+            const sleep = ms => new Promise(r => setTimeout(r, ms));
+            const showText = async (text, holdSec) => {
+                textEl.innerText = text;
+                textEl.style.animation = 'none';
+                void textEl.offsetWidth; // 리플로우 강제
+                textEl.style.animation = `fadeInOutText ${holdSec}s forwards`;
+                await sleep(holdSec * 1000);
+            };
+
+            await showText("[양]과 [음] 사이에 존재하는 힘", 3);
+            await sleep(300);
+
+            await showText("개념 자체로 구성된 무언가.", 3);
+            await sleep(300);
+
+            await showText("이 물질에 대해 알려진 것은 단지 [양]과 [음] 사이에 존재한다", 4);
+            await sleep(300);
+
+            // "그 외에는 아무것도 없다." 등장 후 폭발
+            textEl.innerText = "그 외에는 아무것도 없다.";
+            textEl.style.animation = `fadeIn 0.5s forwards`; 
+            await sleep(1500);
+
+            // 흑백 섬광 폭발 & 강한 흔들림
+            document.body.classList.remove('screen-shake-mod');
+            document.body.classList.add('screen-shake-heavy');
+            
+            flash.classList.remove('hidden');
+            flash.classList.add('bw-flash-effect');
+            
+            await sleep(500);
+            document.body.classList.remove('screen-shake-heavy');
+            await sleep(1000); // 섬광이 끝날 때까지 대기
+            
+            // 텍스트 및 오버레이 초기화 (비주얼라이저는 배경에 그대로 남겨둠)
+            overlay.classList.add('hidden');
+            flash.classList.add('hidden');
+            flash.classList.remove('bw-flash-effect');
+            textEl.innerText = "";
+            textEl.style.animation = 'none';
+        }
+
+        // HELLBORN 컷신 연출
+        async function runHellbornSequence() {
+            const overlay = document.getElementById('hellborn-overlay');
+            const textEl = document.getElementById('hellborn-text');
+            const markEl = document.getElementById('hellborn-death-mark');
+            const swordsContainer = document.getElementById('hellborn-swords-container');
+            const crownContainer = document.getElementById('hellborn-crown');
+            const crownLeft = document.getElementById('hb-crown-left');
+            const crownRight = document.getElementById('hb-crown-right');
+            const sliceLine = document.getElementById('hb-slice-line');
+            const flash = document.getElementById('hellborn-flash');
+            
+            overlay.classList.remove('hidden');
+            markEl.classList.remove('hidden'); // 위에 死 글자 등장
+
+            const sleep = ms => new Promise(r => setTimeout(r, ms));
+            const showText = async (text, holdSec) => {
+                textEl.innerText = text;
+                textEl.style.animation = 'none';
+                void textEl.offsetWidth; // 리플로우 강제
+                textEl.style.animation = `fadeInOutText ${holdSec}s forwards`;
+                await sleep(holdSec * 1000);
+            };
+
+            await showText(`${userInfo.name} 지옥의 이른바 신이 되었습니다`, 3);
+            await sleep(300);
+            await showText("연옥에서 태어나, 죽음으로 의미를 얻은 존재.", 3);
+            await sleep(300);
+            await showText("영원한 침묵에서 깨어나 개선가를 울릴 것인가?", 3);
+            await sleep(300);
+            await showText("우리의 구세주의 발자취를 따를 것인가?", 3);
+            await sleep(300);
+            
+            textEl.innerText = "그것이 정녕 우리의 구세주였을까?";
+            textEl.style.animation = `fadeIn 1s forwards`; 
+            await sleep(1500);
+
+            // 주변에 검은색 검이 꽂힘
+            for(let i = 0; i < 15; i++) {
+                const sword = document.createElement('div');
+                sword.className = 'sword-prop';
+                sword.style.left = `${Math.random() * 90 + 5}%`;
+                sword.style.top = `${Math.random() * 80 + 10}%`;
+                // 검이 땅에 꽂히는 듯한 무작위 각도
+                sword.style.transform = `rotate(${Math.random() * 40 - 20}deg)`;
+                swordsContainer.appendChild(sword);
+                await sleep(100); // 0.1초마다 하나씩 꽂힘
+            }
+            await sleep(500);
+
+            // 텍스트 사라지고 왕관 등장
+            textEl.style.opacity = '0';
+            crownContainer.classList.remove('hidden');
+            
+            // 왕관 반으로 썰리기 (슬라이스 이펙트)
+            await sleep(500);
+            sliceLine.classList.remove('hidden');
+            
+            crownLeft.style.transition = 'transform 0.5s ease-out, opacity 0.5s';
+            crownRight.style.transition = 'transform 0.5s ease-out, opacity 0.5s';
+            crownLeft.style.transform = 'translate(-50px, -30px) rotate(-15deg)';
+            crownLeft.style.opacity = '0';
+            crownRight.style.transform = 'translate(50px, 30px) rotate(15deg)';
+            crownRight.style.opacity = '0';
+            
+            await sleep(200);
+
+            // 화염 폭발 + 화면 흔들림
+            document.body.classList.add('screen-shake-anim');
+            flash.classList.remove('hidden');
+            flash.classList.add('flash-effect');
+            
+            await sleep(500);
+            document.body.classList.remove('screen-shake-anim');
+            await sleep(1000);
+            
+            // 초기화
+            overlay.classList.add('hidden');
+            markEl.classList.add('hidden');
+            flash.classList.add('hidden');
+            flash.classList.remove('flash-effect');
+            crownContainer.classList.add('hidden');
+            sliceLine.classList.add('hidden');
+            swordsContainer.innerHTML = '';
+            crownLeft.style = "clip-path: polygon(0 0, 50% 0, 45% 100%, 0 100%);";
+            crownRight.style = "clip-path: polygon(50% 0, 100% 0, 100% 100%, 45% 100%);";
+        }
+
+        // MasterHand 컷신 연출
+        async function runMasterHandSequence() {
+            const overlay = document.getElementById('masterhand-overlay');
+            const radar = document.getElementById('mh-radar-container');
+            const wireLeft = document.getElementById('mh-wire-left');
+            const wireRight = document.getElementById('mh-wire-right');
+            const gearContainer = document.getElementById('mh-gear-container');
+            const gearText = document.getElementById('mh-gear-text');
+            const flash = document.getElementById('masterhand-flash');
+            
+            overlay.classList.remove('hidden');
+            
+            const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+            // 1. 3초간 암전
+            await sleep(3000);
+            
+            // 2. 중앙 주황색 레이더 등장
+            radar.classList.remove('hidden');
+            
+            // 3. 레이더 유지 후 1초간 암전
+            await sleep(2000); 
+            radar.classList.add('hidden');
+            await sleep(1000);
+            
+            // 4. 1초 뒤 좌우 전선 등장
+            await sleep(1000);
+            wireLeft.style.left = '50vw'; // 왼쪽에서 중앙까지
+            wireLeft.style.transform = 'translate(-100%, -50%)'; // 중심축 보정
+            wireRight.style.right = '50vw'; // 오른쪽에서 중앙까지
+            wireRight.style.transform = 'translate(100%, -50%)';
+            await sleep(500);
+            
+            // 5. 중앙 톱니바퀴 등장
+            gearContainer.classList.remove('hidden');
+            
+            // 6. 2초 뒤 글자 등장
+            await sleep(2000);
+            gearText.style.opacity = '1';
+            
+            // 7. 3초 뒤 다시 전체 암전
+            await sleep(3000);
+            gearContainer.classList.add('hidden');
+            wireLeft.style.left = '-50vw';
+            wireRight.style.right = '-50vw';
+            gearText.style.opacity = '0';
+            
+            // 8. 1초 뒤 주황색 섬광
+            await sleep(1000);
+            flash.classList.remove('hidden');
+            flash.classList.add('flash-effect');
+            
+            await sleep(1500); // 플래시 애니메이션 시간
+            
+            // 초기화
+            overlay.classList.add('hidden');
+            flash.classList.add('hidden');
+            flash.classList.remove('flash-effect');
+            wireLeft.style.transform = 'translateY(-50%)';
+            wireRight.style.transform = 'translateY(-50%)';
+        }
+
+        // Jesus 컷신 연출
+        async function runJesusSequence() {
+            const overlay = document.getElementById('jesus-overlay');
+            const textEl = document.getElementById('jesus-text');
+            const bgImg = document.getElementById('jesus-bg-image');
+            const flash = document.getElementById('jesus-flash');
+            
+            overlay.classList.remove('hidden');
+            bgImg.style.opacity = '0';
+            
+            const verses = [
+                "태초에 하나님이 천지를 창조하시니라 (창세기 1:1)",
+                "여호와는 나의 목자시니 내게 부족함이 없으리로다 (시편 23:1)",
+                "수고하고 무거운 짐 진 자들아 다 내게로 오라 (마태복음 11:28)",
+                "내가 세상 끝날까지 너희와 항상 함께 있으리라 (마태복음 28:20)",
+                "네 시작은 미약하였으나 네 나중은 심히 창대하리라 (욥기 8:7)",
+                "내가 너를 지명하여 불렀나니 너는 내 것이라 (이사야 43:1)"
+            ];
+            const randomVerse = verses[Math.floor(Math.random() * verses.length)];
+            
+            const sleep = ms => new Promise(r => setTimeout(r, ms));
+            const showText = async (text, holdSec) => {
+                textEl.innerText = text;
+                textEl.style.animation = 'none';
+                void textEl.offsetWidth; // 리플로우 강제
+                textEl.style.animation = `fadeInOutText ${holdSec}s forwards`;
+                await sleep(holdSec * 1000);
+            };
+
+            // 1. 성경 구절 출력
+            await showText(randomVerse, 4);
+            
+            // 2. 대사 중반부 (두려워 말라) 시작 시 이미지 서서히 등장
+            bgImg.style.opacity = '0.5';
+            
+            textEl.innerText = "두려워 말라";
+            textEl.style.animation = `fadeIn 2s forwards`;
+            
+            await sleep(1500);
+            // 3. 사진이 점점 더 뚜렷해짐
+            bgImg.style.opacity = '0.9';
+            await sleep(1500);
+
+            // 4. 마지막에 화이트 아웃 폭발
+            flash.classList.remove('hidden');
+            flash.classList.add('flash-effect');
+            
+            await sleep(1500); // 플래시 애니메이션 시간
+            
+            // 초기화
+            overlay.classList.add('hidden');
+            flash.classList.add('hidden');
+            flash.classList.remove('flash-effect');
+            bgImg.style.opacity = '0';
+            textEl.style.animation = 'none';
+            textEl.innerText = '';
+        }
+
+        // MONARCH 컷신 연출
+        async function runMonarchSequence() {
+            const overlay = document.getElementById('monarch-overlay');
+            const whispersContainer = document.getElementById('monarch-whispers-container');
+            const counterEl = document.getElementById('monarch-counter');
+            const eyeContainer = document.getElementById('monarch-eye-container');
+            const flash = document.getElementById('monarch-flash');
+            
+            overlay.classList.remove('hidden');
+            whispersContainer.innerHTML = '';
+            counterEl.innerText = "0";
+            counterEl.style.opacity = "0";
+            
+            const sleep = ms => new Promise(r => setTimeout(r, ms));
+            
+            // 1. 3초간 암전 및 보라색 테두리
+            await sleep(3000);
+
+            // 2. 대사 목록 준비 및 배치 (화면 중앙은 피함)
+            const whisperTexts = [
+                "구제 불능이야", "잔혹한 폭군이야", "신을 모독했어", "가짜 구원자였어", 
+                "저주받았어", "이 야만한 놈아", "지옥으로 떨어져라", "돌아올 길은 없어", 
+                "사기꾼이야", "왜 그랬어...", "희망조차 없어", "쓰레기야", 
+                "맹세를 어긴 배신자야", "완전히 타락했어", "추방당해라"
+            ];
+            const whisperElements = [];
+            
+            whisperTexts.forEach(text => {
+                const el = document.createElement('div');
+                el.className = 'monarch-whisper';
+                el.innerText = text;
+                
+                let x, y;
+                do {
+                    x = Math.random() * 80 + 10;
+                    y = Math.random() * 80 + 10;
+                } while (x > 35 && x < 65 && y > 35 && y < 65);
+                
+                el.style.left = `${x}%`;
+                el.style.top = `${y}%`;
+                whispersContainer.appendChild(el);
+                whisperElements.push(el);
+            });
+
+            // 3. 서서히 글자들과 숫자가 등장하며 카운트업
+            counterEl.style.opacity = "1";
+            whisperElements.forEach(el => el.style.opacity = "1");
+
+            const startTime = Date.now();
+            const duration = 5000;
+            
+            await new Promise(resolve => {
+                function updateCounter() {
+                    const elapsed = Date.now() - startTime;
+                    let progress = Math.min(elapsed / duration, 1);
+                    counterEl.innerText = Math.floor(progress * 500);
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(updateCounter);
+                    } else {
+                        resolve();
+                    }
+                }
+                requestAnimationFrame(updateCounter);
+            });
+
+            // 4. 500 달성 순간, 대사들이 명령어로 교체됨
+            const commandTexts = ["꿇어라", "엎드려라", "숭배해라", "찬양해라", "굴복해라"];
+            whisperElements.forEach((el, index) => {
+                el.innerText = commandTexts[index % commandTexts.length];
+                el.classList.add('monarch-command');
+            });
+            
+            // 2초 대기
+            await sleep(2000);
+
+            // 5. 모든 텍스트/숫자 소멸 & 거대한 보라색 눈 등장
+            whispersContainer.innerHTML = '';
+            counterEl.style.opacity = "0";
+            eyeContainer.classList.remove('hidden');
+            
+            // 3초 대기
+            await sleep(3000);
+            
+            // 6. 보라색 섬광 폭발
+            flash.classList.remove('hidden');
+            flash.classList.add('flash-effect');
+            
+            await sleep(1500);
+            
+            // 시퀀스 초기화
+            overlay.classList.add('hidden');
+            eyeContainer.classList.add('hidden');
+            flash.classList.add('hidden');
+            flash.classList.remove('flash-effect');
+        }
+
+        // iLlUsi0nAry 컷신 연출
+        async function runIllusionarySequence() {
+            const overlay = document.getElementById('illusionary-overlay');
+            const textEl = document.getElementById('illusionary-text');
+            const flash = document.getElementById('illusionary-bg-flash');
+            
+            overlay.classList.remove('hidden');
+            
+            const sleep = ms => new Promise(r => setTimeout(r, ms));
+            
+            // 텍스트를 무작위 문자로 깜빡이게 하는 함수
+            const scrambleText = async (finalText, durationMs) => {
+                const chars = '!@#$%^&*()_+{}|:<>?~[]\\;.,/0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+                textEl.style.opacity = '1';
+                textEl.className = "text-white text-4xl md:text-7xl font-black text-center px-6 z-20 text-illusionary font-overclock tracking-[0.2em]";
+                
+                let elapsed = 0;
+                const interval = 60;
+                return new Promise(resolve => {
+                    const timer = setInterval(() => {
+                        elapsed += interval;
+                        if (elapsed >= durationMs) {
+                            clearInterval(timer);
+                            textEl.innerText = finalText;
+                            resolve();
+                        } else {
+                            let scrambled = '';
+                            for (let i = 0; i < finalText.length; i++) {
+                                if (finalText[i] === ' ') scrambled += ' ';
+                                else scrambled += chars[Math.floor(Math.random() * chars.length)];
+                            }
+                            textEl.innerText = scrambled;
+                        }
+                    }, interval);
+                });
+            };
+
+            flash.classList.remove('hidden');
+            
+            flash.style.backgroundColor = 'rgba(255, 0, 255, 0.1)';
+            await scrambleText("W h a t  i s  r e a l ?", 1500);
+            await sleep(800);
+            
+            flash.style.backgroundColor = 'rgba(0, 255, 255, 0.1)';
+            await scrambleText("S y s t e m  E r r o r", 1500);
+            await sleep(800);
+            
+            flash.style.backgroundColor = 'rgba(255, 0, 0, 0.2)';
+            document.body.classList.add('screen-shake-anim');
+            await scrambleText("i L l U s i 0 n A r y", 2000);
+            
+            // Glitch flash 폭발
+            let toggle = false;
+            for(let i = 0; i < 15; i++) {
+                flash.style.backgroundColor = toggle ? 'white' : 'black';
+                toggle = !toggle;
+                await sleep(40);
+            }
+            
+            document.body.classList.remove('screen-shake-anim');
+            overlay.classList.add('hidden');
+            textEl.style.opacity = '0';
+            flash.classList.add('hidden');
+        }
+
+        function showResult(item) {
+            const displayArea = document.getElementById('result-display');
+            
+            // 폰트 클래스 적용
+            const fontClass = item.isCoolFont ? 'font-overclock' : 'font-bold';
+            
+            // 특수 칭호 전용 수식어
+            let displayName = item.name;
+            let subtitleHtml = ''; 
+
+            if (item.id === 'aegis') {
+                displayName = `<span class="gear-icon">⚙️</span> ${item.name} <span class="gear-icon">⚙️</span>`;
+            } else if (item.id === 'luminosity') {
+                displayName = `<span class="sparkle-icon">✨</span> ${item.name} <span class="sparkle-icon">✨</span>`;
+            } else if (item.id === 'equinox') {
+                // EQUINOX 전용 서브 타이틀
+                subtitleHtml = `<p class="text-white text-lg md:text-xl mb-4 font-bold text-shadow-glow-blue">${userInfo.name} 님이 양과 음 사이의 <span class="text-slate-300">[???????]</span>를 찾았습니다.</p>`;
+            } else if (item.id === 'hellborn') {
+                displayName = `<div id="hellborn-flames-bg" class="absolute inset-0 overflow-hidden pointer-events-none z-[-1] opacity-60"></div>${item.name}`;
+            } else if (item.id === 'breakthrough') {
+                subtitleHtml = `<div class="bg-black border border-slate-700 px-6 py-3 rounded-lg shadow-lg mb-4 inline-block"><p class="text-slate-300 text-lg md:text-xl font-bold">${userInfo.name}님이 <span class="text-white">???</span>를 1/125의 확률로 찾았습니다 <span class="text-slate-400">[돌파!]</span></p></div>`;
+            } else if (item.id === 'masterhand') {
+                // 화면 테두리 주황색 네온 효과 추가 (md:col-span-2의 relative 컨테이너 기준)
+                displayName = `<div class="mh-screen-glow rounded-2xl"></div>${item.name}`;
+            } else if (item.id === 'jesus') {
+                // 예수 등장 시 신성한 후광 배경 이펙트 추가
+                displayName = `<div class="absolute inset-0 bg-yellow-500 opacity-20 pointer-events-none rounded-2xl" style="box-shadow: inset 0 0 100px rgba(253, 224, 71, 0.5);"></div><div class="relative z-10">${item.name}</div>`;
+            } else if (item.id === 'monarch') {
+                // 수많은 눈들 장식 연출 추가
+                let eyesHtml = '';
+                for (let i = 0; i < 35; i++) {
+                    let top = Math.random() * 90;
+                    let left = Math.random() * 90;
+                    let delay = Math.random() * 2;
+                    let size = Math.random() * 1.0 + 0.5;
+                    eyesHtml += `<div class="absolute monarch-bg-eye z-0" style="top: ${top}%; left: ${left}%; animation-delay: ${delay}s; transform: scale(${size});">
+                        <svg width="30" height="18" viewBox="0 0 100 60" fill="none" stroke="#a855f7" stroke-width="3">
+                            <path d="M10 30 C30 15, 70 15, 90 30 C70 45, 30 45, 10 30 Z" fill="rgba(0,0,0,0.5)"/>
+                            <circle cx="50" cy="30" r="10" fill="rgba(147, 51, 234, 0.4)"/>
+                        </svg>
+                    </div>`;
+                }
+                displayName = `<div class="absolute inset-0 overflow-hidden pointer-events-none z-0">${eyesHtml}</div><span class="relative z-10">${item.name}</span>`;
+            }
+            
+            // 글씨가 한 화면에 들어오게 text-4xl sm:text-5xl md:text-6xl 로 조정
+            displayArea.innerHTML = `
+                <div class="animate-pop text-center w-full px-2 relative z-10">
+                    <p class="text-slate-400 mb-2">당신이 뽑은 결과는...</p>
+                    ${subtitleHtml}
+                    <h1 class="text-4xl sm:text-5xl md:text-6xl ${fontClass} ${item.color} mb-6 break-words">
+                        ${displayName}
+                    </h1>
+                    <div class="inline-block bg-slate-900 px-6 py-2 rounded-full border border-slate-700">
+                        <span class="text-slate-300">확률: </span>
+                        <span class="text-white font-bold">${item.fraction}</span>
+                    </div>
+                </div>
+            `;
+
+            // HELLBORN 당첨 시 배경에 작은 불꽃 파티클 생성
+            if (item.id === 'hellborn') {
+                const flamesContainer = document.getElementById('hellborn-flames-bg');
+                if (flamesContainer) {
+                    for(let i=0; i<40; i++) {
+                        const flame = document.createElement('div');
+                        flame.className = 'flame-particle';
+                        flame.style.left = `${Math.random() * 100}%`;
+                        flame.style.animationDelay = `${Math.random() * 2}s`;
+                        flamesContainer.appendChild(flame);
+                    }
+                }
+            }
+
+            // 픽셀레이션 당첨 시 팝업 띄우기
+            if (item.id === 'pixel') {
+                showPixelPopup();
+            } else if (item.id === 'luminosity') {
+                showLuminosityPopup();
+            }
+        }
+
+        function showPixelPopup() {
+            const popup = document.getElementById('pixel-toast');
+            const text = document.getElementById('pixel-toast-text');
+            text.innerText = `( ( ${userInfo.name} ) )님이 픽셀화되었습니다!`;
+            popup.classList.remove('hidden');
+            
+            // 3초 뒤에 숨김
+            setTimeout(() => {
+                popup.classList.add('hidden');
+            }, 3000);
+        }
+
+        function showLuminosityPopup() {
+            const popup = document.getElementById('luminosity-toast');
+            const text = document.getElementById('luminosity-toast-text');
+            text.innerText = `눈부신 빛이 ${userInfo.name} 님을 집어삼켰습니다.`;
+            popup.classList.remove('hidden');
+            
+            // 3초 뒤에 숨김
+            setTimeout(() => {
+                popup.classList.add('hidden');
+            }, 3000);
+        }
+
+        function addToLeaderboard(item, rawProb) {
+            rollHistory.push({
+                id: item.id,
+                name: item.name,
+                fraction: item.fraction,
+                rawProb: rawProb,
+                color: item.color,
+                isCoolFont: item.isCoolFont
+            });
+            
+            rollHistory.sort((a, b) => a.rawProb - b.rawProb);
+            
+            const leaderboard = document.getElementById('leaderboard-list');
+            leaderboard.innerHTML = "";
+            
+            rollHistory.forEach((record, index) => {
+                const isTop3 = index < 3;
+                const medal = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : "🔹";
+                const fontClass = record.isCoolFont ? 'font-overclock' : 'font-bold';
+                
+                const entry = document.createElement('div');
+                entry.className = `flex justify-between items-center bg-slate-900 p-3 rounded-lg border ${isTop3 ? 'border-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.3)]' : 'border-slate-700'}`;
+                
+                entry.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="text-xl">${medal}</span>
+                        <span class="${fontClass} ${record.color} drop-shadow-md text-sm sm:text-base">${record.name}</span>
+                    </div>
+                    <span class="text-slate-400 text-xs sm:text-sm bg-slate-800 px-2 py-1 rounded">${record.fraction}</span>
+                `;
+                leaderboard.appendChild(entry);
+            });
+        }
+
+        // 컷신 갤러리 관련 함수
+        function openCutsceneGallery() {
+            if (isRolling) return;
+            document.getElementById('cutscene-modal').classList.remove('hidden');
+        }
+
+        function closeCutsceneGallery() {
+            document.getElementById('cutscene-modal').classList.add('hidden');
+        }
+
+        async function playCutscene(type) {
+            if (isRolling) return;
+            closeCutsceneGallery();
+            isRolling = true;
+            
+            // 새 뽑기 시작 시 이전 비주얼라이저 숨김 처리
+            document.getElementById('equinox-visualizer').classList.add('hidden');
+            
+            const btn = document.querySelector('.btn-roll');
+            if (btn) btn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            if (type === 'leviathan') await runLeviathanSequence();
+            else if (type === 'equinox') await runEquinoxSequence();
+            else if (type === 'hellborn') await runHellbornSequence();
+            else if (type === 'masterhand') await runMasterHandSequence();
+            else if (type === 'jesus') await runJesusSequence();
+            else if (type === 'monarch') await runMonarchSequence();
+            else if (type === 'illusionary') await runIllusionarySequence();
+
+            isRolling = false;
+            if (btn) btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+    </script>
+</body>
+</html>
